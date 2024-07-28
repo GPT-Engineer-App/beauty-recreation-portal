@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { HelpCircle } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { HelpCircle, Download } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toPng } from 'html-to-image';
 
 const Index = () => {
   const [totalCost, setTotalCost] = useState(245);
@@ -14,6 +16,14 @@ const Index = () => {
   const [flashStorage, setFlashStorage] = useState(0);
   const [hddStorage, setHddStorage] = useState(100);
   const [wdsUsers, setWdsUsers] = useState(0);
+  const [ibmRelease, setIbmRelease] = useState('V7R5');
+  const [mirrorDisks, setMirrorDisks] = useState('no');
+  const [backupOption, setBackupOption] = useState('no');
+  const [ptfOption, setPtfOption] = useState('no');
+  const [serviceOption, setServiceOption] = useState('no');
+  const [primaryLanguage, setPrimaryLanguage] = useState('2924');
+
+  const cardRef = useRef(null);
 
   const calculateTotalCost = () => {
     const cpuCost = cpuCores * 200;
@@ -34,9 +44,44 @@ const Index = () => {
     setTotalCost(calculateTotalCost());
   };
 
+  const handleDownload = async () => {
+    const configuration = {
+      totalCost,
+      cpuCores,
+      mainMemory,
+      flashStorage,
+      hddStorage,
+      wdsUsers,
+      ibmRelease,
+      mirrorDisks,
+      backupOption,
+      ptfOption,
+      serviceOption,
+      primaryLanguage
+    };
+
+    // Create JSON file
+    const jsonContent = JSON.stringify(configuration, null, 2);
+    const jsonBlob = new Blob([jsonContent], { type: 'application/json' });
+    const jsonUrl = URL.createObjectURL(jsonBlob);
+    const jsonLink = document.createElement('a');
+    jsonLink.href = jsonUrl;
+    jsonLink.download = 'ibm_i_configuration.json';
+    jsonLink.click();
+
+    // Create PNG image
+    if (cardRef.current) {
+      const dataUrl = await toPng(cardRef.current);
+      const link = document.createElement('a');
+      link.download = 'ibm_i_configuration.png';
+      link.href = dataUrl;
+      link.click();
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
-      <Card className="w-full max-w-4xl mx-auto">
+      <Card className="w-full max-w-4xl mx-auto" ref={cardRef}>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">IBM i System Configuration</CardTitle>
         </CardHeader>
@@ -62,7 +107,7 @@ const Index = () => {
             <div className="space-y-4">
               <div>
                 <Label>IBM i release:</Label>
-                <Select defaultValue="V7R5">
+                <Select value={ibmRelease} onValueChange={setIbmRelease}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select IBM i release" />
                   </SelectTrigger>
@@ -244,6 +289,12 @@ const Index = () => {
           </div>
         </CardContent>
       </Card>
+      <div className="mt-6 flex justify-center">
+        <Button onClick={handleDownload} className="flex items-center space-x-2">
+          <Download className="h-4 w-4" />
+          <span>Download Configuration</span>
+        </Button>
+      </div>
     </div>
   );
 };
